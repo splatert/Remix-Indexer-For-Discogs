@@ -76,7 +76,7 @@ function drawEntry(u, i, r, t, d, y) {
         var tr = document.createElement('tr');
         tr.style.textAlign = 'center';
 
-        tr.innerHTML = '<td><img style="height:24px;" src="'+img+'"></td><td><a style="color: #2653d9 !important" href="'+url+'">'+rel+'</a></td><td>'+title+'</td><td>'+dur+'</td><td>'+year+'</td>';
+        tr.innerHTML = '<td><img style="height:24px;" src="'+img+'"></td><td><a style="color: #2653d9 !important" target="_blank" href="'+url+'">'+rel+'</a></td><td>'+title+'</td><td>'+dur+'</td><td>'+year+'</td>';
 
 
         table.append(tr);
