@@ -1,5 +1,5 @@
 
-# Remix-Lister-For-Discogs
+# Remix-Indexer-For-Discogs
 Lists distinct mixes/remixes of a Discogs master release.
 
 ## Installation
