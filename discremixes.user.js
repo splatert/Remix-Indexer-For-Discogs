@@ -124,124 +124,139 @@ function getTracks(rels) {
 }
 
 
-function getReleases() {
+var tracks = [];
+
+
+function getReleases2() {
+    
     var masterID = getMasterID();
     if (masterID) {
 
-        var releases = [];
-        var tracks = [];
-        
-        fetch('https://api.discogs.com/masters/'+masterID+'/versions')
-            .then(response => {
-                if (!response.ok) {
-                    console.log('Error connecting to Discogs API.');
-                }
-                return response.json();
-            })
-            .then(master => {
-                var vers = master['versions'];
-                vers.forEach(ver => {
-                    
+        var master = null;
 
-                    fetch(ver['resource_url'])
-                    .then(response => {
-                        if (!response.ok) {
-                            console.log('err');
+        const xml = new XMLHttpRequest();
+        xml.open('GET', 'https://api.discogs.com/masters/'+masterID+'/versions', false);
+        xml.send();
+
+        console.log('Getting Discogs Master release...');
+
+        if (xml.status == 200) {
+            master = JSON.parse(xml.responseText);
+
+            console.log('OK');
+
+            var vers = master['versions'];
+            vers.forEach(ver => {
+                
+                console.log('Getting Discogs Releases...');
+
+                xml.open('GET', ver['resource_url'], false);
+                xml.send();
+
+                if (xml.status == 200) {
+
+                    var release = JSON.parse(xml.responseText);
+                    console.log('OK');
+
+                    for (let i = 0; i < release['tracklist'].length; i++) {
+
+                        var data = {
+                            'u': '',
+                            'i': '',
+                            'r': '',
+                            't': '',
+                            'd': '',
+                            'y': ''
+                        };
+
+                        if (release['uri']) {
+                            data['u'] = release['uri'];
                         }
-                        return response.json();
-                    })
-                    .then(release => {
-
-                        for (let i = 0; i < release['tracklist'].length; i++) {
-
-                            var data = {
-                                'u': '',
-                                'i': '',
-                                'r': '',
-                                't': '',
-                                'd': '',
-                                'y': ''
-                            };
-
-                            if (release['uri']) {
-                                data['u'] = release['uri'];
-                            }
-                            if (release['year']) {
-                                data['y'] = release['year'];
-                            }
+                        if (release['year']) {
+                            data['y'] = release['year'];
+                        }
 
 
-                            for (let l = 0; l < release['labels'].length; l++) {
-                                if (l < 2) {
-                                    data['r'] += release['labels'][l]['name'];
-                                    if (release['labels'][l+1]) {
-                                        data['r'] += ', ';
+                        for (let l = 0; l < release['labels'].length; l++) {
+                            if (l < 2) {
+                                if (release['labels'][l]['catno']) {
+                                    if (release['labels'][l]['catno'] != 'none') {
+                                        data['r'] += release['labels'][l]['catno'];
+                                    }
+                                    else {
+                                        data['r'] += release['labels'][l]['name'];
                                     }
                                 }
-                                else {
-                                    continue;
+                                if (release['labels'][l+1]) {
+                                    data['r'] += ', ';
                                 }
-                            }
-                            if (release['labels'].length > 2) {
-                                data['r'] += '...';
-                            }
-
-
-                            if (release['thumb']) {
-                                data['i'] = release['thumb'];
-                            }
-
-
-                            if (release['tracklist'][i]['type_'] == 'track') {
-                                var t = release['tracklist'][i]['title'];
-
-                                var alreadyExists = false;
-                                tracks.forEach(track => {
-                                    if (track['t'] == t) {
-                                        alreadyExists = true;
-                                    }
-                                });
-
-                                if (alreadyExists) {
-                                    continue;
-                                }
-                                else {
-                                    data['t'] = t;
-
-                                    if (release['tracklist'][i]['duration']) {
-                                        data['d'] = release['tracklist'][i]['duration'];
-                                    }
-
-                                }
-
                             }
                             else {
                                 continue;
                             }
-
-                            tracks.push(data);
-                            drawEntry(data['u'], data['i'], data['r'], data['t'], data['d'], data['y']);
+                        }
+                        if (release['labels'].length > 2) {
+                            data['r'] += '...';
                         }
 
 
-                        console.log(tracks);
+                        if (release['thumb']) {
+                            data['i'] = release['thumb'];
+                        }
 
-                    })
 
-                });
-            })
-        
-        
+                        if (release['tracklist'][i]['type_'] == 'track') {
+                            var t = release['tracklist'][i]['title'];
+
+                            var alreadyExists = false;
+                            tracks.forEach(track => {
+                                if (track['t'] == t) {
+                                    alreadyExists = true;
+                                }
+                            });
+
+                            if (alreadyExists) {
+                                continue;
+                            }
+                            else {
+                                data['t'] = t;
+
+                                if (release['tracklist'][i]['duration']) {
+                                    data['d'] = release['tracklist'][i]['duration'];
+                                }
+
+                            }
+
+                        }
+                        else {
+                            continue;
+                        }
+
+                        tracks.push(data);
+                    }
+
+                    console.log('Data returned.');
+
+
+                }
+
+            });
+
+        }
+
     }
+    
 }
+
+
 
 
 
 function createMainButton() {
     var btn = document.createElement('button');
-    btn.style.padding = '4px';
     btn.style.color = 'white';
     btn.style.background = '#0f0f0f';
+    btn.style.padding = '4px 25px 4px 25px';
     btn.style.border = 'unset';
     btn.style.borderRadius = '2px';
     btn.style.fontWeight = 'bold';
@@ -261,11 +276,24 @@ function createMainButton() {
         
         var table = createTable();
         var btn = createMainButton();
+        var btn_clicked = false;
 
         btn.addEventListener('click', function(){
-            table.style.display = 'table';
-            btn.remove();
-            getReleases();
+            
+            if (!btn_clicked) {
+                btn_clicked = true;
+
+                btn.innerText = 'Please wait...';
+
+                table.style.display = 'table';
+                getReleases2();
+
+                tracks.forEach(track => {
+                    drawEntry(track['u'], track['i'], track['r'], track['t'], track['d'], track['y']);
+                });
+
+            }
+
         })
 
 
