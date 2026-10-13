@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Remix Lister for Discogs
 // @namespace    http://tampermonkey.net/
-// @version      2026-09-16
+// @version      2026-010-13
 // @description  Lists distinct mixes/remixes of a Discogs master release.
 // @author       splatert
 // @match        https://www.discogs.com/master/*
