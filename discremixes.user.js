@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Remix Lister for Discogs
 // @namespace    http://tampermonkey.net/
-// @version      2026-010-13
+// @version      2026-09-16
 // @description  Lists distinct mixes/remixes of a Discogs master release.
 // @author       splatert
 // @match        https://www.discogs.com/master/*
@@ -23,7 +23,7 @@ function createTable() {
     table.id = 'remix-list';
 
     var tr = document.createElement('tr');
-    tr.innerHTML = '<th style="width: 0;">Cover</th><th>Release</th><th>Track</th><th>Duration</th><th>Year</th>';
+    tr.innerHTML = '<th style="width: 0;">Cover</th><th>Release</th><th>Track</th><th>Duration</th><th>Year</th><th>Rating</th>';
     
     table.style.display = 'none';
     table.append(tr);
@@ -37,7 +37,7 @@ function createTable() {
 }
 
 
-function drawEntry(u, i, r, t, d, y) {
+function drawEntry(u, i, r, t, d, y, rate) {
     var table = document.getElementById('remix-list');
     if (table) {
 
@@ -51,6 +51,7 @@ function drawEntry(u, i, r, t, d, y) {
         var title = 'Untitled Track';
         var dur = '--:--';
         var year = 'NA';
+        var rating = '--';
 
 
         if (u) {
@@ -71,12 +72,15 @@ function drawEntry(u, i, r, t, d, y) {
         if (y) {
             year = y;
         }
+        if (rate) {
+            rating = rate;
+        }
 
 
         var tr = document.createElement('tr');
         tr.style.textAlign = 'center';
 
-        tr.innerHTML = '<td><img style="height:24px;" src="'+img+'"></td><td><a style="color: #2653d9 !important" target="_blank" href="'+url+'">'+rel+'</a></td><td>'+title+'</td><td>'+dur+'</td><td>'+year+'</td>';
+        tr.innerHTML = '<td><img style="height:24px;" src="'+img+'"></td><td><a style="color: #2653d9 !important" target="_blank" href="'+url+'">'+rel+'</a></td><td>'+title+'</td><td>'+dur+'</td><td>'+year+'</td><td>'+rate+'</td>';
 
 
         table.append(tr);
@@ -166,7 +170,8 @@ function getReleases2() {
                             'r': '',
                             't': '',
                             'd': '',
-                            'y': ''
+                            'y': '',
+                            'rating': ''
                         };
 
                         if (release['uri']) {
@@ -174,6 +179,13 @@ function getReleases2() {
                         }
                         if (release['year']) {
                             data['y'] = release['year'];
+                        }
+                        if (release['community']['rating']) {
+                            if (release['community']['rating']['count'] && release['community']['rating']['count'] > 0) {
+                                if (release['community']['rating']['average']) {
+                                    data['rating'] = '★' + release['community']['rating']['average'] + ' (' + release['community']['rating']['count'] + ')';
+                                }
+                            }
                         }
 
 
@@ -289,7 +301,7 @@ function createMainButton() {
                 getReleases2();
 
                 tracks.forEach(track => {
-                    drawEntry(track['u'], track['i'], track['r'], track['t'], track['d'], track['y']);
+                    drawEntry(track['u'], track['i'], track['r'], track['t'], track['d'], track['y'], track['rating']);
                 });
 
             }
